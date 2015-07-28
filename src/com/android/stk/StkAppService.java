@@ -188,6 +188,10 @@ public class StkAppService extends Service {
         mNotificationManager = (NotificationManager) mContext
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         sInstance = this;
+        if (mContext.getResources().getInteger(R.integer.config_ui_timeout_sec) > 0) {
+            StkApp.UI_TIMEOUT = getResources().getInteger(R.integer.config_ui_timeout_sec)
+                    * 1000;//convert it to millisecond.
+        }
     }
 
     @Override
@@ -748,6 +752,18 @@ public class StkAppService extends Service {
                 StkAppInstaller.unInstall(mContext, mCurrentSlotId);
             } else {
                 CatLog.d(this, "Install App");
+                CatLog.d(this, "getResources().getBoolean(R.bool.send_stk_title ="
+                        + (getResources().getBoolean(R.bool.send_stk_title)));
+                if ((getResources().getBoolean(R.bool.send_stk_title))) {
+                    String stkTitle = mCurrentMenu.title;
+                    CatLog.d(this ,"mCurrentMenu.title =" + stkTitle);
+                    //Send intent with the extra to launcher
+                    final String STK_INTENT =
+                            "org.codeaurora.carrier.ACTION_TELEPHONY_SEND_STK_TITLE";
+                    Intent intent = new Intent(STK_INTENT);
+                    intent.putExtra("StkTitle", stkTitle);
+                    sendStickyBroadcast(intent);
+                }
                 StkAppInstaller.install(mContext, mCurrentSlotId);
             }
             mMainMenu = mCurrentMenu;
@@ -997,6 +1013,8 @@ public class StkAppService extends Service {
                 resMsg.setResultCode(ResultCode.OK);
                 resMsg.setConfirmation(confirmed);
                 if (confirmed) {
+                    CatLog.d(this, "Going back to mainMenu before starting a call.");
+                    launchMenuActivity(null);
                     launchEventMessage(mCurrentCmd.getCallSettings().callMsg);
                 }
                 break;
